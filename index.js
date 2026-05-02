@@ -305,26 +305,43 @@ const TOOLS = [
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: TOOLS.map(({ name, description, schema }) => ({
-    name,
-    description,
-    inputSchema: {
+  tools: TOOLS.map(({ name, description, schema }) => {
+    const jsonSchema = {
       type: "object",
-      properties: schema.shape ? Object.fromEntries(
-        Object.entries(schema.shape).map(([k, v]) => [
-          k,
-          {
-            type: v._def.typeName.toLowerCase().replace("zod", ""),
-            description: v.description,
-            ...(v instanceof z.ZodEnum ? { enum: v._def.values } : {}),
-          }
-        ])
-      ) : {},
-      required: schema.shape ? Object.entries(schema.shape)
-        .filter(([_, v]) => !v.isOptional())
-        .map(([k, _]) => k) : [],
-    },
-  })),
+      properties: {},
+      required: [],
+    };
+
+    if (schema && schema.shape) {
+      for (const [key, value] of Object.entries(schema.shape)) {
+        const def = value._def;
+        let type = "string";
+
+        if (value instanceof z.ZodNumber) type = "number";
+        else if (value instanceof z.ZodBoolean) type = "boolean";
+        else if (value instanceof z.ZodEnum) type = "string";
+
+        jsonSchema.properties[key] = {
+          type,
+          description: value.description,
+        };
+
+        if (value instanceof z.ZodEnum) {
+          jsonSchema.properties[key].enum = def.values;
+        }
+
+        if (!value.isOptional()) {
+          jsonSchema.required.push(key);
+        }
+      }
+    }
+
+    return {
+      name,
+      description,
+      inputSchema: jsonSchema,
+    };
+  }),
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
