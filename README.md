@@ -291,6 +291,31 @@ The server is intentionally small: **MCP in, typed tool calls, Termux:API out.**
 
 ---
 
+# 📚 Developer documentation
+
+The README is the high-level project tour. The `docs/` directory is the deeper developer reference.
+
+| Document | Purpose |
+|---|---|
+| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Development model, tool design, validation, extension workflow |
+| [`docs/TOOL_REFERENCE.md`](docs/TOOL_REFERENCE.md) | Detailed reference for every current MCP tool and its risk profile |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime architecture, request lifecycle, data flow, future boundaries |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, sensitive capabilities, shell execution, policies and deployment guidance |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Diagnostics for Termux, Android, MCP, Node.js and individual capabilities |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution standards, tool requirements, testing and PR checklist |
+
+### 🧭 Recommended reading path
+
+**New user** → README → installation → first tool → [Troubleshooting](docs/TROUBLESHOOTING.md)
+
+**Developer** → README → [Developer Guide](docs/DEVELOPER_GUIDE.md) → [Tool Reference](docs/TOOL_REFERENCE.md) → [Architecture](docs/ARCHITECTURE.md)
+
+**Security-focused deployment** → [Security Reference](docs/SECURITY.md) → [Architecture](docs/ARCHITECTURE.md) → [Troubleshooting](docs/TROUBLESHOOTING.md)
+
+**Contributor** → [Developer Guide](docs/DEVELOPER_GUIDE.md) → [Contributing](docs/CONTRIBUTING.md) → [Tool Reference](docs/TOOL_REFERENCE.md)
+
+---
+
 # 🔐 Security matters
 
 This project exposes capabilities that can affect a real device and real-world data.
@@ -325,41 +350,6 @@ In particular, command execution should be migrated from shell-string execution 
 
 ---
 
-# 🔧 Developer guide
-
-## Project structure
-
-```text
-termux-mcp-server/
-├── index.js          # MCP server + tool registry
-├── package.json      # Node.js metadata and scripts
-├── package-lock.json # Locked dependency tree
-├── README.md         # Documentation
-└── LICENSE           # MIT license
-```
-
-## Add a new Termux tool
-
-The core pattern is:
-
-```js
-{
-  name: "example_tool",
-  description: "Do something useful with Android.",
-  schema: z.object({
-    value: z.string().describe("Input value"),
-  }),
-  handler: async (args) => {
-    // Execute the corresponding Termux:API command.
-    // Prefer argument-safe process execution for new tools.
-  },
-}
-```
-
-The server exposes the registered tools through MCP and validates incoming arguments with Zod.
-
----
-
 # 🧪 Local development checklist
 
 Before opening a PR, verify:
@@ -378,6 +368,8 @@ For serious changes, also verify:
 - shell metacharacters cannot escape the intended command boundary
 - sensitive tools are not accidentally enabled by default
 - README examples match actual tool behavior
+
+See the complete [Developer Guide](docs/DEVELOPER_GUIDE.md) and [Contributing Guide](docs/CONTRIBUTING.md).
 
 ---
 
