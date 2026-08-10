@@ -75,6 +75,52 @@ That command:
 9. Starts the MCP server
 ```
 
+### ⚡ AI Agent + 9Router + Pi — one-line bootstrap
+
+If you also use **Pi + 9Router**, bootstrap the local AI-agent layer with one copy/paste command:
+
+```bash
+pkg update -y && pkg upgrade -y && pkg install -y git nodejs termux-api && npm config set allow-scripts=9router --location=user && npm install -g 9router@latest && command -v pi >/dev/null 2>&1 && pi install npm:pi-9router-ext || true && printf '\nexport NINE_ROUTER_BASE_URL=http://localhost:20128\nexport NINE_ROUTER_API_KEY=sk_9router\n' >> ~/.profile && export NINE_ROUTER_BASE_URL=http://localhost:20128 NINE_ROUTER_API_KEY=sk_9router && nohup 9router > ~/.9router.log 2>&1 &
+```
+
+This prepares:
+
+```text
+Termux
+  ├── Git
+  ├── Node.js
+  ├── Termux:API
+  ├── 9Router @ latest
+  ├── Pi 9Router extension (if Pi is installed)
+  └── NINE_ROUTER_* environment variables
+          │
+          ▼
+     localhost:20128
+```
+
+> **Pi note:** the extension is installed only when `pi` is already available. If `pi` is not installed, install your preferred Pi coding-agent package first, then run `pi install npm:pi-9router-ext`.
+
+### 🧰 Recommended repeatable installer
+
+For a cleaner, rerunnable setup use:
+
+```bash
+bash scripts/bootstrap-ai-agent.sh
+```
+
+Full documentation: [`docs/AGENT_BOOTSTRAP.md`](docs/AGENT_BOOTSTRAP.md)
+
+### 🔐 Environment variables
+
+Default local configuration:
+
+```bash
+export NINE_ROUTER_BASE_URL=http://localhost:20128
+export NINE_ROUTER_API_KEY=sk_9router
+```
+
+If your local router uses a different key or endpoint, override them when running the bootstrap script. **Never commit a real API key to Git.**
+
 ### 👁️ Optional OCR support
 
 If you want the `ocr_image` capability:
@@ -258,6 +304,7 @@ Show toast
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime architecture, request lifecycle and data flow |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, sensitive capabilities and deployment guidance |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Termux, Android, MCP, Node.js and capability diagnostics |
+| [`docs/AGENT_BOOTSTRAP.md`](docs/AGENT_BOOTSTRAP.md) | One-shot AI-agent, Pi and 9Router setup |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution standards, testing and PR checklist |
 
 ---
@@ -273,6 +320,8 @@ Treat the MCP server as a **privileged local integration**.
 - Avoid exposing it to an untrusted network.
 - Use explicit confirmation for external side effects.
 - Be especially careful with `sms_send`, contacts, location, camera and clipboard access.
+- Keep 9Router bound to localhost unless you intentionally configure secure authenticated remote access.
+- Never commit real API keys or tokens to the repository or shell history.
 
 ### ⚠️ Development status
 
@@ -298,6 +347,7 @@ For serious changes verify:
 - shell metacharacters cannot escape command boundaries
 - sensitive tools are not accidentally enabled by default
 - documentation matches actual tool behavior
+- 9Router credentials are not committed or printed into public logs
 
 See [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) and [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
 
