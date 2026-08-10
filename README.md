@@ -8,6 +8,7 @@
 [![Android](https://img.shields.io/badge/Android-Termux-34A853?style=for-the-badge)](https://termux.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
+[![Sponsor](https://img.shields.io/badge/💜_Sponsor-GitHub_Sponsors-EA4AAA?style=for-the-badge)](https://github.com/sponsors/yashas-13)
 
 ## ⚡ What is this?
 
@@ -336,23 +337,24 @@ One small MCP server → many Android-native capabilities → composable agent w
 
 # 💜 Support the project
 
-### Turn an idea into a capability
-
-This project is open source and built to make Android a first-class playground for AI agents.
-
-If it saves you time, helps you build something, or you want to help push the project toward a safer and more capable Android agent runtime:
-
 <div align="center">
 
-### ☕ Fuel the next build
+## ☕ Fuel the next experiment
 
-**Sponsor the project → [GitHub Sponsors](https://github.com/sponsors/yashas-13)**
+If this project helped you build something useful, **help turn the next idea into another Android capability.**
 
-`⭐ Star` → `🧪 Build` → `🐛 Report` → `💜 Sponsor` → `🚀 Ship`
+[![💜 Sponsor on GitHub](https://img.shields.io/badge/💜_SPONSOR_ON_GITHUB-EA4AAA?style=for-the-badge)](https://github.com/sponsors/yashas-13)
+
+### `☕ → 💻 → 🤖 → 📱 → 🚀`
+
+**Your support helps maintain the project, improve security, build new Android capabilities, test integrations, and keep the documentation sharp.**
+
+**No pressure:** a ⭐ star, 🐛 bug report, 💡 idea, 🔧 pull request, or 📢 share also helps enormously.
 
 </div>
 
-> **Sponsor support goes toward maintaining the project, improving security, building new Android capabilities, testing integrations, and keeping the documentation and tooling sharp.**
+> ### 🧪 Want to fund a capability?
+> If you're a sponsor and have a feature you'd love to see — propose it in an issue or discussion. Sponsorship helps prioritize maintenance and ambitious new experiments, but does not guarantee a specific feature or delivery date.
 
 ---
 
