@@ -334,6 +334,28 @@ One small MCP server → many Android-native capabilities → composable agent w
 
 ---
 
+# 💜 Support the project
+
+### Turn an idea into a capability
+
+This project is open source and built to make Android a first-class playground for AI agents.
+
+If it saves you time, helps you build something, or you want to help push the project toward a safer and more capable Android agent runtime:
+
+<div align="center">
+
+### ☕ Fuel the next build
+
+**Sponsor the project → [GitHub Sponsors](https://github.com/sponsors/yashas-13)**
+
+`⭐ Star` → `🧪 Build` → `🐛 Report` → `💜 Sponsor` → `🚀 Ship`
+
+</div>
+
+> **Sponsor support goes toward maintaining the project, improving security, building new Android capabilities, testing integrations, and keeping the documentation and tooling sharp.**
+
+---
+
 # ⭐ Build something your phone can actually do
 
 Your AI already has a brain.
