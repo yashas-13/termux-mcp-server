@@ -18,28 +18,15 @@ Your phone can **see, hear, move, speak, locate, notify, and communicate**.
 This project connects the two.
 
 ```text
-┌───────────────────────────────┐
-│        AI AGENT / LLM         │
-│ Claude • Codex • OpenClaw     │
-└───────────────┬───────────────┘
-                │ MCP
-                ▼
-┌───────────────────────────────┐
-│       Termux MCP Server       │
-│   typed tools + validation    │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│          Termux:API           │
-└───────────────┬───────────────┘
-                │
-                ▼
-┌───────────────────────────────┐
-│          Android phone        │
-│ camera • GPS • SMS • sensors  │
-│ clipboard • torch • TTS • ... │
-└───────────────────────────────┘
+AI AGENT / LLM
+      │
+      │ MCP
+      ▼
+Termux MCP Server
+      │
+      │ Termux:API
+      ▼
+Android phone
 ```
 
 ### The result
@@ -54,81 +41,66 @@ To actually **interacting with the phone** instead of only describing what you s
 
 ## 🎯 Why this is interesting
 
-### For newcomers
-
-You do not need to understand MCP first.
-
-Install Termux + Termux:API, run the server, connect your AI client, and start experimenting.
-
-### For Termux power users
-
-Turn Android into a scriptable hardware endpoint for your agent.
-
-### For AI developers
-
-Use a small MCP server as a foundation for building richer Android agents, automation systems, and device-aware workflows.
-
-### For hackers and builders
-
-Combine it with your existing agent stack and create things like:
-
-- 📸 **“Take a photo and analyze it.”**
-- 📋 **“Read my clipboard and summarize it.”**
-- 🔋 **“Check my battery and tell me if I should charge.”**
-- 📍 **“Get my current location.”**
-- 🔊 **“Read this result aloud.”**
-- 🔦 **“Turn on the flashlight.”**
-- 📱 **“Send this SMS.”** *(explicitly enable and secure this capability before autonomous use)*
-- 🧭 **“Read the available sensors.”**
+- 🆕 **Newcomers:** install the prerequisites, connect an MCP client, and start experimenting.
+- 📱 **Termux users:** expose Android capabilities as composable agent tools.
+- 🧑‍💻 **AI developers:** build device-aware agents on top of MCP.
+- 🛠️ **Builders:** combine camera, OCR, sensors, clipboard, TTS, GPS, messaging and device controls into workflows.
 
 ---
 
-# 🚀 Get started in minutes
+# 🚀 Zero-to-Agent: copy, paste, go
 
-## 1. Install Termux
+The following is the **full bootstrap path** for a fresh Termux environment.
 
-Install **Termux** from a trusted source such as F-Droid.
+> **Prerequisite:** install the Termux Android app and the **Termux:API Android app** first. The Android app and the `termux-api` package work together.
 
-## 2. Install Termux:API
-
-Install the **Termux:API Android app** and then install the CLI package inside Termux:
+### 🟢 One-shot setup
 
 ```bash
-pkg update
-pkg install termux-api nodejs git
+pkg update -y && pkg upgrade -y && pkg install -y git nodejs termux-api && git clone https://github.com/yashas-13/termux-mcp-server.git && cd termux-mcp-server && npm install && npm start
 ```
 
-For OCR:
+That command:
+
+```text
+1. Updates Termux package metadata
+2. Upgrades installed packages
+3. Installs Git
+4. Installs Node.js
+5. Installs the Termux:API CLI package
+6. Clones this repository
+7. Enters the repository
+8. Installs Node dependencies
+9. Starts the MCP server
+```
+
+### 👁️ Optional OCR support
+
+If you want the `ocr_image` capability:
 
 ```bash
-pkg install tesseract
+pkg install -y tesseract
 ```
 
-> **Important:** The Termux:API Android app and the `termux-api` CLI package work together. Installing only one is not enough.
+### 🔎 Verify Termux:API before debugging MCP
 
-## 3. Clone the server
+Run these directly in Termux:
 
 ```bash
-git clone https://github.com/yashas-13/termux-mcp-server.git
-cd termux-mcp-server
-npm install
+termux-battery-status
+termux-clipboard-get
+termux-wifi-connectioninfo
 ```
 
-## 4. Run it
-
-```bash
-npm start
-```
-
-The server uses **MCP stdio transport**, so your MCP client launches it as a local process.
+If those commands work, the underlying Termux:API bridge is available and you can move on to MCP integration.
 
 ---
 
 # 🧠 Connect your AI agent
 
-The server is designed to work with MCP-compatible clients.
+The server uses **MCP stdio transport**. Your MCP client launches the Node process locally.
 
-A generic configuration looks like:
+Generic configuration:
 
 ```json
 {
@@ -143,9 +115,13 @@ A generic configuration looks like:
 }
 ```
 
-For example, the project can be used as a local MCP server by tools such as Claude Code and other MCP-compatible agent runtimes.
+### 🤖 One-line instruction for an AI coding agent
 
-> Your client may use a different configuration file or UI. Keep the `command` and absolute `index.js` path concept the same.
+```text
+Integrate https://github.com/yashas-13/termux-mcp-server as a local MCP server: first verify/install Git, Node.js, the Termux:API Android app and the `termux-api` package, then clone the repository, run `npm install`, configure the absolute `index.js` path in the MCP client, start the server, discover all exposed tools, test read-only capabilities first, and only enable side-effecting tools such as SMS after explicit security/permission review.
+```
+
+> **Do not blindly give an autonomous agent unrestricted access to SMS, contacts, location, camera, clipboard, or other sensitive capabilities.** Treat the server as a privileged local integration.
 
 ---
 
@@ -177,7 +153,7 @@ For example, the project can be used as a local MCP server by tools such as Clau
 
 # 💥 The fun starts here
 
-Once connected, you can ask your agent things like:
+Once connected, try:
 
 ```text
 “Check the battery and tell me whether I should charge the phone.”
@@ -207,15 +183,11 @@ Once connected, you can ask your agent things like:
 “Speak the current battery percentage aloud.”
 ```
 
-The interesting part is not any single tool.
-
-It is the ability to **combine tools into agentic workflows**.
+The interesting part is not any single tool. It is the ability to **combine tools into agentic workflows**.
 
 ---
 
 # 🧩 Build workflows, not just commands
-
-The real power of MCP appears when the model chains several capabilities:
 
 ```text
 Trigger
@@ -243,8 +215,6 @@ Speak warning
 Show toast
 ```
 
-That same pattern can become a much larger Android agent.
-
 ---
 
 # 🏗️ Architecture
@@ -268,17 +238,6 @@ That same pattern can become a much larger Android agent.
                                ▼
                     ┌──────────────────────┐
                     │      Termux:API      │
-                    ├──────────────────────┤
-                    │ battery              │
-                    │ camera               │
-                    │ clipboard            │
-                    │ contacts             │
-                    │ location             │
-                    │ notifications        │
-                    │ sensors              │
-                    │ SMS                  │
-                    │ TTS                  │
-                    │ Wi-Fi                │
                     └──────────┬───────────┘
                                │
                                ▼
@@ -287,95 +246,63 @@ That same pattern can become a much larger Android agent.
                     └──────────────────────┘
 ```
 
-The server is intentionally small: **MCP in, typed tool calls, Termux:API out.**
-
 ---
 
 # 📚 Developer documentation
 
-The README is the high-level project tour. The `docs/` directory is the deeper developer reference.
-
 | Document | Purpose |
 |---|---|
-| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Development model, tool design, validation, extension workflow |
-| [`docs/TOOL_REFERENCE.md`](docs/TOOL_REFERENCE.md) | Detailed reference for every current MCP tool and its risk profile |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime architecture, request lifecycle, data flow, future boundaries |
-| [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, sensitive capabilities, shell execution, policies and deployment guidance |
-| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Diagnostics for Termux, Android, MCP, Node.js and individual capabilities |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution standards, tool requirements, testing and PR checklist |
-
-### 🧭 Recommended reading path
-
-**New user** → README → installation → first tool → [Troubleshooting](docs/TROUBLESHOOTING.md)
-
-**Developer** → README → [Developer Guide](docs/DEVELOPER_GUIDE.md) → [Tool Reference](docs/TOOL_REFERENCE.md) → [Architecture](docs/ARCHITECTURE.md)
-
-**Security-focused deployment** → [Security Reference](docs/SECURITY.md) → [Architecture](docs/ARCHITECTURE.md) → [Troubleshooting](docs/TROUBLESHOOTING.md)
-
-**Contributor** → [Developer Guide](docs/DEVELOPER_GUIDE.md) → [Contributing](docs/CONTRIBUTING.md) → [Tool Reference](docs/TOOL_REFERENCE.md)
+| [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Development model, tool design, validation and extension workflow |
+| [`docs/TOOL_REFERENCE.md`](docs/TOOL_REFERENCE.md) | Detailed reference for current MCP tools and risk profiles |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime architecture, request lifecycle and data flow |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, sensitive capabilities and deployment guidance |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Termux, Android, MCP, Node.js and capability diagnostics |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution standards, testing and PR checklist |
 
 ---
 
 # 🔐 Security matters
 
-This project exposes capabilities that can affect a real device and real-world data.
-
-That includes:
-
-- SMS
-- Contacts
-- Location
-- Camera
-- Clipboard
-- Notifications
-- Device controls
+This project exposes capabilities that can affect a real device and real-world data, including SMS, contacts, location, camera, clipboard and notifications.
 
 Treat the MCP server as a **privileged local integration**.
 
-### Before using it with an autonomous agent
-
 - Run it on a device you control.
-- Review which tools your MCP client is allowed to call.
-- Avoid exposing the server to an untrusted network.
-- Be especially careful with `sms_send`, contacts, location, camera, and clipboard access.
-- Prefer explicit confirmation for actions with external side effects.
+- Review which tools your MCP client can call.
+- Avoid exposing it to an untrusted network.
+- Use explicit confirmation for external side effects.
+- Be especially careful with `sms_send`, contacts, location, camera and clipboard access.
 
 ### ⚠️ Development status
 
-This repository is an active project and should be hardened further before being treated as a security-sensitive production service.
-
-In particular, command execution should be migrated from shell-string execution to argument-safe process execution (`execFile`/equivalent), and dangerous capabilities should have explicit policy/confirmation controls.
+The repository should be hardened further before security-sensitive production use. In particular, command execution should migrate from shell-string execution to argument-safe process execution (`execFile`/equivalent), and dangerous capabilities should have explicit policy/confirmation controls.
 
 **Do not expose this server directly to the public internet.**
 
 ---
 
-# 🧪 Local development checklist
-
-Before opening a PR, verify:
+# 🧪 Development checklist
 
 ```bash
 npm install
 npm start
 ```
 
-Then test the tools on a real Termux + Termux:API installation.
+Then test against a real Termux + Termux:API installation.
 
-For serious changes, also verify:
+For serious changes verify:
 
 - invalid arguments are rejected
 - command failures are reported cleanly
-- shell metacharacters cannot escape the intended command boundary
+- shell metacharacters cannot escape command boundaries
 - sensitive tools are not accidentally enabled by default
-- README examples match actual tool behavior
+- documentation matches actual tool behavior
 
-See the complete [Developer Guide](docs/DEVELOPER_GUIDE.md) and [Contributing Guide](docs/CONTRIBUTING.md).
+See [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) and [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
 
 ---
 
 # 🗺️ Roadmap
-
-The goal is to turn this from a simple command bridge into a **robust Android agent capability layer**.
 
 ### Near term
 
@@ -384,8 +311,8 @@ The goal is to turn this from a simple command bridge into a **robust Android ag
 - [ ] Add capability allow/deny policy
 - [ ] Add explicit confirmation for high-impact tools
 - [ ] Add structured error responses
-- [ ] Add better tool metadata and schemas
-- [ ] Fix and validate all command mappings against current Termux:API
+- [ ] Improve tool metadata and schemas
+- [ ] Validate command mappings against current Termux:API
 
 ### Next level
 
@@ -407,52 +334,18 @@ One small MCP server → many Android-native capabilities → composable agent w
 
 ---
 
-# 🤝 Contributing
+# ⭐ Build something your phone can actually do
 
-Have a useful Termux:API integration?
+Your AI already has a brain.
 
-Add it as a focused MCP tool, document the required Android/Termux permissions, test it on-device, and open a pull request.
+Your Android phone already has a body.
 
-Good contributions are:
-
-- small and composable
-- safe by default
-- clearly validated
-- documented with examples
-- tested against real Termux:API behavior
-
----
-
-# ⭐ Why star this project?
-
-Because the interesting future of AI is not just:
-
-> “An AI that can write code.”
-
-It is:
-
-> **“An AI that can interact with the world around it.”**
-
-Android is already packed with useful hardware and APIs.
-
-Termux gives us a powerful bridge.
-
-MCP gives agents a standard way to use tools.
-
-This project connects those pieces.
-
-**Build something weird. Build something useful. Build something your phone can actually do.** 🚀
-
----
-
-## 📚 Learn more
+**This project connects them.** 🚀
 
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [Termux](https://termux.com/)
 - [Termux:API](https://github.com/termux/termux-api)
 - [Termux:API package](https://github.com/termux/termux-api-package)
-
----
 
 ## 📄 License
 
