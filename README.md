@@ -2,177 +2,239 @@
 
 > **Turn your Android phone into an AI-controlled device.**
 >
-> Connect Claude Code, Codex, OpenClaw, or any MCP-compatible agent to **Termux:API** and give it real phone capabilities — battery, clipboard, camera, sensors, GPS, TTS, Wi-Fi, notifications, contacts, and SMS.
+> Connect an MCP-compatible AI agent to **Termux:API** and expose real Android capabilities — battery, clipboard, camera, sensors, GPS, TTS, Wi-Fi, notifications, contacts, SMS and more.
 
 [![MCP](https://img.shields.io/badge/MCP-compatible-7C3AED?style=for-the-badge)](https://modelcontextprotocol.io/)
 [![Android](https://img.shields.io/badge/Android-Termux-34A853?style=for-the-badge)](https://termux.com/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 [![Sponsor](https://img.shields.io/badge/💜_Sponsor-GitHub_Sponsors-EA4AAA?style=for-the-badge)](https://github.com/sponsors/yashas-13)
 
-## ⚡ What is this?
+---
+
+## ⚡ The idea
 
 Most AI agents can **think**.
 
-Your phone can **see, hear, move, speak, locate, notify, and communicate**.
+Your phone can **see, hear, speak, sense, locate, notify and communicate**.
 
-This project connects the two.
+This project connects the two:
 
 ```text
-AI AGENT / LLM
-      │
-      │ MCP
-      ▼
-Termux MCP Server
-      │
-      │ Termux:API
-      ▼
-Android phone
+                         🤖 AI AGENT
+                              │
+                              │ MCP
+                              ▼
+                    ┌─────────────────────┐
+                    │  TERMUX MCP SERVER  │
+                    │  tools + validation │
+                    └──────────┬──────────┘
+                               │
+                               │ Termux:API
+                               ▼
+                    ┌─────────────────────┐
+                    │     📱 ANDROID      │
+                    │ 📷 🔊 📍 📋 🔋 📡 │
+                    └─────────────────────┘
 ```
 
-### The result
-
-Your agent can go from:
-
-> “I need information from my phone.”
-
-To actually **interacting with the phone** instead of only describing what you should do.
+The result is a local bridge between **AI reasoning and Android capabilities**.
 
 ---
 
-## 🎯 Why this is interesting
+# 🚀 One command. Full AI stack.
 
-- 🆕 **Newcomers:** install the prerequisites, connect an MCP client, and start experimenting.
-- 📱 **Termux users:** expose Android capabilities as composable agent tools.
-- 🧑‍💻 **AI developers:** build device-aware agents on top of MCP.
-- 🛠️ **Builders:** combine camera, OCR, sensors, clipboard, TTS, GPS, messaging and device controls into workflows.
+If you want the complete **Termux MCP + 9Router + Pi** experience, don't install everything manually.
+
+### 1️⃣ Install the Android prerequisites once
+
+Install:
+
+- **Termux**
+- **Termux:API**
+
+The Android apps must be installed separately; the shell bootstrap cannot install APKs. The bootstrap installs the Termux-side `termux-api` package.
+
+### 2️⃣ Paste this ONE command into Termux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash
+```
+
+That's it. The installer is **interactive, ordered, fail-fast and rerunnable**.
+
+> 🔐 **Security:** this is a convenience installer for a repository you trust. If you want to inspect it first, open [`scripts/bootstrap-ai-agent.sh`](scripts/bootstrap-ai-agent.sh) and run it locally instead of piping it to Bash.
 
 ---
 
-# 🚀 Zero-to-Agent: copy, paste, go
+# 🧬 What the one-shot installer actually does
 
-The following is the **full bootstrap path** for a fresh Termux environment.
-
-> **Prerequisite:** install the Termux Android app and the **Termux:API Android app** first. The Android app and the `termux-api` package work together.
-
-### 🟢 One-shot setup
-
-```bash
-pkg update -y && pkg upgrade -y && pkg install -y git nodejs termux-api && git clone https://github.com/yashas-13/termux-mcp-server.git && cd termux-mcp-server && npm install && npm start
-```
-
-That command:
+The pipeline is intentionally ordered so each layer is available before the next layer depends on it:
 
 ```text
-1. Updates Termux package metadata
-2. Upgrades installed packages
-3. Installs Git
-4. Installs Node.js
-5. Installs the Termux:API CLI package
-6. Clones this repository
-7. Enters the repository
-8. Installs Node dependencies
-9. Starts the MCP server
+┌──────────────────────────────────────────────────────────────┐
+│                 🟢 ONE-SHOT BOOTSTRAP                       │
+└─────────────────────────────┬────────────────────────────────┘
+                              │
+                              ▼
+                    Update / upgrade Termux
+                              │
+                              ▼
+             Git + Node.js + curl + Termux:API
+                              │
+                              ▼
+                 Clone / fast-forward repo
+                              │
+                              ▼
+                    Install 9Router latest
+                              │
+                              ▼
+                    Install Pi Coding Agent
+                              │
+                              ▼
+                     Install pi-9router-ext
+                              │
+                              ▼
+              Configure NINE_ROUTER_* environment
+                              │
+                              ▼
+                  npm install — MCP server
+                              │
+                              ▼
+                    Start `9router --tray`
+                              │
+                              ▼
+                     Health-check `/v1/models`
+                              │
+                              ▼
+                  Discover live model catalogue
+                              │
+                              ▼
+                         Launch Pi
+                              │
+                              ▼
+                 🆓 CONNECT A FREE ROUTE
+                              │
+                              ▼
+                     /9router-models
+                              │
+                              ▼
+                      SELECT A MODEL
+                              │
+                              ▼
+                         🤖 CODE
+                              │
+                              ▼
+                       📱 ANDROID
 ```
 
-### ⚡ AI Agent + 9Router + Pi — one-line bootstrap
+### What gets installed/configured
 
-If you also use **Pi + 9Router**, bootstrap the local AI-agent layer with one copy/paste command:
+| Component | Purpose |
+|---|---|
+| Git | Clone/update the repository |
+| Node.js | Runtime for MCP, 9Router and Pi |
+| curl | Router health/model checks |
+| Termux:API | Android capability bridge |
+| 9Router latest | Local model routing/proxy |
+| `9router --tray` | Background local router process |
+| Pi Coding Agent | Terminal coding-agent harness |
+| `pi-9router-ext` | 9Router provider/model integration for Pi |
+| `NINE_ROUTER_BASE_URL` | Local router endpoint |
+| `NINE_ROUTER_API_KEY` | Local router credential |
+| MCP dependencies | Runtime for Termux MCP Server |
 
-```bash
-pkg update -y && pkg upgrade -y && pkg install -y git nodejs termux-api && npm config set allow-scripts=9router --location=user && npm install -g 9router@latest && command -v pi >/dev/null 2>&1 && pi install npm:pi-9router-ext || true && printf '\nexport NINE_ROUTER_BASE_URL=http://localhost:20128\nexport NINE_ROUTER_API_KEY=sk_9router\n' >> ~/.profile && export NINE_ROUTER_BASE_URL=http://localhost:20128 NINE_ROUTER_API_KEY=sk_9router && nohup 9router > ~/.9router.log 2>&1 &
-```
-
-This prepares:
-
-```text
-Termux
-  ├── Git
-  ├── Node.js
-  ├── Termux:API
-  ├── 9Router @ latest
-  ├── Pi 9Router extension (if Pi is installed)
-  └── NINE_ROUTER_* environment variables
-          │
-          ▼
-     localhost:20128
-```
-
-> **Pi note:** the extension is installed only when `pi` is already available. If `pi` is not installed, install your preferred Pi coding-agent package first, then run `pi install npm:pi-9router-ext`.
-
-### 🧰 Recommended repeatable installer
-
-For a cleaner, rerunnable setup use:
-
-```bash
-bash scripts/bootstrap-ai-agent.sh
-```
-
-Full documentation: [`docs/AGENT_BOOTSTRAP.md`](docs/AGENT_BOOTSTRAP.md)
-
-### 🔐 Environment variables
-
-Default local configuration:
-
-```bash
-export NINE_ROUTER_BASE_URL=http://localhost:20128
-export NINE_ROUTER_API_KEY=sk_9router
-```
-
-If your local router uses a different key or endpoint, override them when running the bootstrap script. **Never commit a real API key to Git.**
-
-### 👁️ Optional OCR support
-
-If you want the `ocr_image` capability:
-
-```bash
-pkg install -y tesseract
-```
-
-### 🔎 Verify Termux:API before debugging MCP
-
-Run these directly in Termux:
-
-```bash
-termux-battery-status
-termux-clipboard-get
-termux-wifi-connectioninfo
-```
-
-If those commands work, the underlying Termux:API bridge is available and you can move on to MCP integration.
+The bootstrap checks the Node.js version needed by the current Pi package and stops with a useful error rather than continuing with a broken installation.
 
 ---
 
-# 🧠 Connect your AI agent
+# 🧑‍🚀 The interactive experience
 
-The server uses **MCP stdio transport**. Your MCP client launches the Node process locally.
-
-Generic configuration:
-
-```json
-{
-  "mcpServers": {
-    "termux": {
-      "command": "node",
-      "args": [
-        "/absolute/path/to/termux-mcp-server/index.js"
-      ]
-    }
-  }
-}
-```
-
-### 🤖 One-line instruction for an AI coding agent
+The installer doesn't silently blast through everything. It guides the user:
 
 ```text
-Integrate https://github.com/yashas-13/termux-mcp-server as a local MCP server: first verify/install Git, Node.js, the Termux:API Android app and the `termux-api` package, then clone the repository, run `npm install`, configure the absolute `index.js` path in the MCP client, start the server, discover all exposed tools, test read-only capabilities first, and only enable side-effecting tools such as SMS after explicit security/permission review.
+╔══════════════════════════════════════════════════════╗
+║       🤖 TERMUX AI AGENT — ONE-SHOT SETUP           ║
+║  MCP + Termux:API + 9Router + Pi + Free Models     ║
+╚══════════════════════════════════════════════════════╝
+
+Continue with the full installation? [Y/n]
+
+Default router URL: http://localhost:20128
+Press Enter to keep it, or enter another URL:
+
+Enter your local 9Router API key:
+
+Launch Pi now? [Y/n]
 ```
 
-> **Do not blindly give an autonomous agent unrestricted access to SMS, contacts, location, camera, clipboard, or other sensitive capabilities.** Treat the server as a privileged local integration.
+It also verifies the stack before declaring success.
 
 ---
 
-# 🛠️ What can your agent do?
+# 🆓 Connect a free model and start building
+
+When setup completes, you can launch Pi immediately or later:
+
+```bash
+source ~/.profile
+pi
+```
+
+Inside Pi:
+
+```text
+/9router-status
+/9router-config
+/9router-reload
+/9router-models
+```
+
+Select **any free provider/model currently available to you** in the live 9Router dashboard. Availability changes, so the project intentionally does not hard-code a model that may disappear.
+
+Then select the discovered model:
+
+```text
+/model 9router/<model-id>
+```
+
+### 🎉 Now enjoy it
+
+```text
+🧠 FREE / AVAILABLE MODEL
+          ↓
+   🤖 Pi Coding Agent
+          ↓
+      🌐 9Router
+          ↓
+       Termux
+          ↓
+   📱 MCP capabilities
+          ↓
+       Android
+```
+
+Try asking your agent:
+
+```text
+Inspect this repository, understand the architecture, find the biggest engineering issue, and fix it safely.
+```
+
+Then connect the Termux MCP server to your MCP-capable client and combine coding-agent reasoning with Android actions.
+
+---
+
+# 🧠 Give another AI one instruction
+
+Copy this into an AI coding agent that can operate your Termux environment:
+
+```text
+Set up the complete Termux AI stack end-to-end: verify Termux + Termux:API are installed, run https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh, install Git/Node.js/curl/termux-api, clone or update termux-mcp-server, install 9router@latest and start `9router --tray` on localhost:20128, install Pi Coding Agent and `pi-9router-ext`, configure NINE_ROUTER_BASE_URL and the user's local NINE_ROUTER_API_KEY, install the MCP dependencies, verify `/v1/models`, launch Pi, run `/9router-config`, `/9router-reload` and `/9router-models`, guide the user to connect any currently available free provider and select a discovered `9router/<model-id>`, then verify the Termux MCP tools; keep credentials private, keep 9Router local, and test read-only capabilities before side-effecting tools.
+```
+
+---
+
+# 📱 What can your agent control?
 
 | Tool | Capability | What it does |
 |---|---|---|
@@ -198,12 +260,10 @@ Integrate https://github.com/yashas-13/termux-mcp-server as a local MCP server: 
 
 ---
 
-# 💥 The fun starts here
-
-Once connected, try:
+# 💥 Try these agent workflows
 
 ```text
-“Check the battery and tell me whether I should charge the phone.”
+“Check my battery and tell me whether I should charge the phone.”
 ```
 
 ```text
@@ -211,56 +271,22 @@ Once connected, try:
 ```
 
 ```text
-“Turn on the flashlight for 5 seconds, then turn it off.”
+“Take a photo, run OCR on it, and summarize the text.”
 ```
 
 ```text
-“Take a photo using the back camera.”
+“Get my current location and explain the coordinates.”
 ```
 
 ```text
-“Get my current location and explain what the coordinates mean.”
-```
-
-```text
-“Read the latest SMS messages and summarize them.”
+“Read my latest SMS messages and summarize them.”
 ```
 
 ```text
 “Speak the current battery percentage aloud.”
 ```
 
-The interesting part is not any single tool. It is the ability to **combine tools into agentic workflows**.
-
----
-
-# 🧩 Build workflows, not just commands
-
-```text
-Trigger
-  ↓
-Read device state
-  ↓
-Reason about the result
-  ↓
-Call another Android capability
-  ↓
-Return a human-friendly result
-```
-
-Example:
-
-```text
-Battery check
-   ↓
-Battery < 20%?
-   ↓
-Yes
-   ↓
-Speak warning
-   ↓
-Show toast
-```
+The real power comes from **composing multiple tools into an agent workflow**.
 
 ---
 
@@ -293,6 +319,8 @@ Show toast
                     └──────────────────────┘
 ```
 
+For the complete runtime model and request lifecycle, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
 ---
 
 # 📚 Developer documentation
@@ -300,12 +328,42 @@ Show toast
 | Document | Purpose |
 |---|---|
 | [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Development model, tool design, validation and extension workflow |
-| [`docs/TOOL_REFERENCE.md`](docs/TOOL_REFERENCE.md) | Detailed reference for current MCP tools and risk profiles |
+| [`docs/TOOL_REFERENCE.md`](docs/TOOL_REFERENCE.md) | Detailed current tool reference, parameters and risk profiles |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime architecture, request lifecycle and data flow |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Threat model, sensitive capabilities and deployment guidance |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Termux, Android, MCP, Node.js and capability diagnostics |
-| [`docs/AGENT_BOOTSTRAP.md`](docs/AGENT_BOOTSTRAP.md) | One-shot AI-agent, Pi and 9Router setup |
+| [`docs/AGENT_BOOTSTRAP.md`](docs/AGENT_BOOTSTRAP.md) | Interactive one-shot Pi + 9Router + MCP installation |
 | [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) | Contribution standards, testing and PR checklist |
+
+---
+
+# 🔎 Verify the installation
+
+```bash
+command -v git
+node --version
+command -v termux-battery-status
+command -v 9router
+command -v pi
+pi --version
+curl -fsS http://localhost:20128/v1/models
+```
+
+Verify Termux:API independently:
+
+```bash
+termux-battery-status
+termux-clipboard-get
+termux-wifi-connectioninfo
+```
+
+Inspect the router:
+
+```bash
+pgrep -af 9router
+cat ~/.9router.pid 2>/dev/null || true
+tail -n 50 ~/.9router.log
+```
 
 ---
 
@@ -317,28 +375,25 @@ Treat the MCP server as a **privileged local integration**.
 
 - Run it on a device you control.
 - Review which tools your MCP client can call.
-- Avoid exposing it to an untrusted network.
-- Use explicit confirmation for external side effects.
-- Be especially careful with `sms_send`, contacts, location, camera and clipboard access.
-- Keep 9Router bound to localhost unless you intentionally configure secure authenticated remote access.
-- Never commit real API keys or tokens to the repository or shell history.
+- Keep 9Router on localhost unless secure authenticated remote access is intentionally configured.
+- Never commit real API keys or tokens.
+- Be especially careful with `sms_send`, contacts, location, camera and clipboard.
+- Test read-only capabilities before enabling external side effects.
 
-### ⚠️ Development status
+### ⚠️ Current hardening status
 
-The repository should be hardened further before security-sensitive production use. In particular, command execution should migrate from shell-string execution to argument-safe process execution (`execFile`/equivalent), and dangerous capabilities should have explicit policy/confirmation controls.
+The repository should be hardened further before security-sensitive production use. In particular, command execution should migrate from shell-string execution to argument-safe process execution (`execFile`/equivalent), and high-impact capabilities should have explicit policy/confirmation controls.
 
-**Do not expose this server directly to the public internet.**
+**Do not expose the MCP server or local router directly to the public internet.**
 
 ---
 
-# 🧪 Development checklist
+# 🧪 Development
 
 ```bash
 npm install
 npm start
 ```
-
-Then test against a real Termux + Termux:API installation.
 
 For serious changes verify:
 
@@ -347,7 +402,7 @@ For serious changes verify:
 - shell metacharacters cannot escape command boundaries
 - sensitive tools are not accidentally enabled by default
 - documentation matches actual tool behavior
-- 9Router credentials are not committed or printed into public logs
+- credentials never enter commits or public logs
 
 See [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) and [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md).
 
@@ -399,12 +454,11 @@ If this project helped you build something useful, **help turn the next idea int
 
 **Your support helps maintain the project, improve security, build new Android capabilities, test integrations, and keep the documentation sharp.**
 
-**No pressure:** a ⭐ star, 🐛 bug report, 💡 idea, 🔧 pull request, or 📢 share also helps enormously.
+A ⭐ star, 🐛 bug report, 💡 idea, 🔧 pull request, or 📢 share also helps enormously.
 
 </div>
 
-> ### 🧪 Want to fund a capability?
-> If you're a sponsor and have a feature you'd love to see — propose it in an issue or discussion. Sponsorship helps prioritize maintenance and ambitious new experiments, but does not guarantee a specific feature or delivery date.
+> **Want to fund a capability?** Propose an idea in an issue or discussion. Sponsorship supports maintenance and ambitious experiments but does not guarantee a specific feature or delivery date.
 
 ---
 
