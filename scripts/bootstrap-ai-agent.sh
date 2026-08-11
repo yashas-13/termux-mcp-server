@@ -1,11 +1,6 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -Eeuo pipefail
 
-# One-shot Termux MCP + 9Router + Pi + Hermes installer.
-# Usage:
-#   curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash -s -- --verbose
-
 REPO_URL="https://github.com/yashas-13/termux-mcp-server.git"
 REPO_DIR="${REPO_DIR:-$HOME/termux-mcp-server}"
 PI_PACKAGE="@earendil-works/pi-coding-agent"
@@ -24,7 +19,6 @@ for arg in "$@"; do
   esac
 done
 
-# curl | bash: keep interactive prompts on the controlling terminal.
 if [ ! -t 0 ]; then
   [ -r /dev/tty ] || { echo "Interactive terminal required." >&2; exit 2; }
   exec </dev/tty
@@ -110,7 +104,6 @@ case "${ANSWER:-Y}" in
 esac
 
 step "1/12 — Update Termux and install packages"
-# Native -y flags answer package-manager confirmations without masking errors.
 run pkg update -y
 run pkg upgrade -y
 run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep python clang rust make pkg-config libffi openssl ffmpeg
@@ -159,16 +152,17 @@ exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
 step "5/12 — Install pi-9router-ext"
-# IMPORTANT: do not pipe `yes` into pi under `set -o pipefail`.
-# Pi finishes successfully and the yes process receives SIGPIPE (141), which
-# previously caused the installer to report a false failure after installation.
-# Pi package installation is non-interactive here, so stdin is closed.
-if pi install npm:pi-9router-ext </dev/null; then
+# Auto-confirm the installer with "y" while avoiding the old `yes | ...`
+# SIGPIPE/pipefail false failure. The Pi exit status is taken from PIPESTATUS.
+set +o pipefail
+printf 'y\n' | pi install npm:pi-9router-ext
+PI_INSTALL_RC="${PIPESTATUS[1]}"
+set -o pipefail
+if [ "$PI_INSTALL_RC" -eq 0 ]; then
   echo "pi-9router-ext: installed"
 else
-  rc=$?
-  echo "ERROR: pi install npm:pi-9router-ext failed (exit $rc)." >&2
-  exit "$rc"
+  echo "ERROR: pi install npm:pi-9router-ext failed (exit $PI_INSTALL_RC)." >&2
+  exit "$PI_INSTALL_RC"
 fi
 
 step "6/12 — Install MCP server dependencies"
