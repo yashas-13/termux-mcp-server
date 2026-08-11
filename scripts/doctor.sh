@@ -18,7 +18,7 @@ info() { printf '  ℹ️  %s\n' "$*"; }
 
 printf '\n╔══════════════════════════════════════════════════════╗\n'
 printf '║          🤖 ANDROID AGENT DOCTOR                   ║\n'
-printf '║   Termux • MCP • 9Router • Pi • Android APIs       ║\n'
+printf '║   Termux • MCP • 9Router • Pi • Hermes • Android  ║\n'
 printf '╚══════════════════════════════════════════════════════╝\n'
 printf '\nThis performs diagnostics only; it does not modify your system.\n'
 
@@ -39,6 +39,13 @@ if command -v node >/dev/null 2>&1; then
   NODE_MAJOR="${NODE_VERSION%%.*}"
   info "Node.js: v$NODE_VERSION"
   if [ "$NODE_MAJOR" -ge 22 ]; then ok 'Node.js >= 22'; else bad 'Node.js 22+ required by current Pi stack'; fi
+fi
+
+if command -v python >/dev/null 2>&1; then
+  info "Python: $(python --version 2>&1)"
+  ok 'Python available for Hermes/Termux tooling'
+else
+  warn 'Python missing — Hermes may need it'
 fi
 
 section 'TERMUX:API'
@@ -111,6 +118,22 @@ else
   bad 'Pi Coding Agent missing'
 fi
 
+section 'HERMES AGENT'
+if command -v hermes >/dev/null 2>&1; then
+  ok "Hermes → $(command -v hermes)"
+  info "Version: $(hermes --version 2>/dev/null || hermes version 2>/dev/null || printf 'unknown')"
+  if hermes doctor >/tmp/termux-mcp-hermes-doctor.$$ 2>&1; then
+    ok 'Hermes doctor passed'
+    tail -n 8 /tmp/termux-mcp-hermes-doctor.$$ | sed 's/^/     /'
+  else
+    bad 'Hermes doctor reported a failure'
+    tail -n 20 /tmp/termux-mcp-hermes-doctor.$$ | sed 's/^/     /'
+  fi
+  rm -f /tmp/termux-mcp-hermes-doctor.$$
+else
+  bad 'Hermes Agent missing — run the one-shot installer or the official Hermes Termux installer'
+fi
+
 section 'ENVIRONMENT'
 if [ -n "${NINE_ROUTER_BASE_URL:-}" ]; then ok "NINE_ROUTER_BASE_URL=$NINE_ROUTER_BASE_URL"; else warn 'NINE_ROUTER_BASE_URL is not exported in this shell'; fi
 if [ -n "${NINE_ROUTER_API_KEY:-}" ]; then ok 'NINE_ROUTER_API_KEY is set'; else warn 'NINE_ROUTER_API_KEY is not exported in this shell'; fi
@@ -119,6 +142,7 @@ section 'SECURITY'
 info '9Router should remain on localhost unless authenticated remote access is intentionally configured.'
 info 'Never commit real API keys or paste them into public logs/issues.'
 info 'Treat SMS, contacts, location, camera and clipboard tools as sensitive capabilities.'
+info 'Hermes and third-party agent packages can execute code; review packages and keep them in trusted environments.'
 
 section 'RESULT'
 printf '\n  PASS: %d\n  WARN: %d\n  FAIL: %d\n\n' "$PASS" "$WARN" "$FAIL"
