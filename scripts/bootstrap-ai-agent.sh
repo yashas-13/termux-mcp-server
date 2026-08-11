@@ -17,7 +17,6 @@ for arg in "$@"; do
   esac
 done
 
-# Keep prompts on the controlling terminal when launched with curl | bash.
 if [ ! -t 0 ]; then
   [ -r /dev/tty ] || { echo "Interactive terminal required." >&2; exit 2; }
   exec </dev/tty
@@ -92,6 +91,7 @@ echo "Router:     $NINE_ROUTER_BASE_URL"
 echo "Mode:       $([ "$VERBOSE" -eq 1 ] && echo VERBOSE || echo NORMAL)"
 echo
 echo "Prerequisite: Termux and Termux:API Android apps must already be installed."
+echo "Hermes:      intentionally excluded from this bootstrap."
 echo
 
 ANSWER=""
@@ -120,9 +120,7 @@ echo "npm:        $(npm --version)"
 echo "Termux:API: READY"
 echo "tmux:       $(tmux -V)"
 
-echo
- echo "Free-model routing note: Hermes is intentionally not installed by this bootstrap."
-echo "The supported stack is Termux MCP + 9Router + Pi + pi-9router-ext."
+echo "Free-model routing: use /9router-models inside Pi to select from the live catalogue."
 
 step "2/10 — Clone or fully fast-forward the Git repository"
 if [ -d "$REPO_DIR/.git" ]; then
@@ -153,7 +151,6 @@ exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
 step "5/10 — Install pi-9router-ext"
-# Send one confirmation only. Avoid `yes | pi`, which can create SIGPIPE 141.
 set +o pipefail
 printf 'y\n' | pi install npm:pi-9router-ext
 PI_EXT_RC=${PIPESTATUS[1]}
@@ -229,8 +226,11 @@ else
 fi
 
 step "10/10 — Final stack checks and usage guide"
-[ -x "$REPO_DIR/scripts/doctor.sh" ] || { echo "ERROR: scripts/doctor.sh not found." >&2; exit 1; }
-bash "$REPO_DIR/scripts/doctor.sh"
+if [ -f "$REPO_DIR/scripts/doctor.sh" ]; then
+  bash "$REPO_DIR/scripts/doctor.sh"
+else
+  echo "WARNING: scripts/doctor.sh is missing; skipping doctor."
+fi
 
 DURATION=$(( $(date +%s) - START_EPOCH ))
 echo
@@ -246,37 +246,18 @@ echo "Router log: $HOME/.9router.log"
 echo
 echo "NEXT — SELECT A MODEL"
 echo
-echo "1. Start Pi:"
-echo "   source ~/.profile && pi"
+echo "  1. source ~/.profile && pi"
+echo "  2. /9router-config"
+echo "  3. /9router-reload"
+echo "  4. /9router-models"
+echo "  5. Select a currently available free route/model"
+echo "  6. Verify with /model"
 echo
-echo "2. Configure the router if needed:"
-echo "   /9router-config"
+echo "Direct selection after discovering the exact live ID:"
+echo "  /model 9router/<model-id>"
 echo
-echo "3. Refresh the live model list:"
-echo "   /9router-reload"
-echo
-echo "4. Open the model selector:"
-echo "   /9router-models"
-echo
-echo "5. Choose a currently available free model."
-echo "   Search the live list for providers/routes such as OpenCode or DeepSeek."
-echo "   Availability is dynamic; do not assume a model is free until the live list shows it."
-echo
-echo "6. Or select a discovered model directly:"
-echo "   /model 9router/<model-id>"
-echo
-echo "7. Verify the active model:"
-echo "   /model"
-echo
-echo "Example workflow:"
-echo "   /9router-config"
-echo "   /9router-reload"
-echo "   /9router-models"
-echo "   /model 9router/<choose-a-live-free-model>"
-echo
-echo "Then give Pi a coding task."
-echo
-echo "NOTE: Big Pickle / OpenCode and DeepSeek routes can change. Use /9router-models to select what your configured 9Router instance currently exposes as available/free."
+echo "Use the live /9router-models catalogue for OpenCode/Big Pickle or DeepSeek routes."
+echo "Do not guess model IDs or assume a route is free; availability can change."
 echo "=========================================================="
 
 LAUNCH=""
