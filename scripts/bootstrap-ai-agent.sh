@@ -19,6 +19,7 @@ for arg in "$@"; do
   esac
 done
 
+# curl | bash: keep interactive prompts on the controlling terminal.
 if [ ! -t 0 ]; then
   [ -r /dev/tty ] || { echo "Interactive terminal required." >&2; exit 2; }
   exec </dev/tty
@@ -108,7 +109,9 @@ run pkg update -y
 run pkg upgrade -y
 run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep python clang rust make pkg-config libffi openssl ffmpeg
 
-for command_name in git node npm curl pgrep termux-battery-status tmux python clang rust rg ffmpeg; do
+# Rust is a toolchain, not a command named `rust` on Termux. Validate the
+# actual executables supplied by the rust package.
+for command_name in git node npm curl pgrep termux-battery-status tmux python clang rustc cargo rg ffmpeg; do
   exists "$command_name" || { echo "Missing command: $command_name" >&2; exit 1; }
 done
 
@@ -120,6 +123,8 @@ echo "Git:        $(git --version)"
 echo "Node.js:    $NODE_VERSION"
 echo "npm:        $(npm --version)"
 echo "Python:     $(python --version 2>&1)"
+echo "Rust:       $(rustc --version)"
+echo "Cargo:      $(cargo --version)"
 echo "Termux:API: READY"
 echo "tmux:       $(tmux -V)"
 
@@ -152,18 +157,17 @@ exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
 step "5/12 — Install pi-9router-ext"
-# Auto-confirm the installer with "y" while avoiding the old `yes | ...`
-# SIGPIPE/pipefail false failure. The Pi exit status is taken from PIPESTATUS.
+# Do not use `yes | pi`: with pipefail, the producer can receive SIGPIPE
+# after Pi has already completed successfully. Feed one confirmation only.
 set +o pipefail
 printf 'y\n' | pi install npm:pi-9router-ext
-PI_INSTALL_RC="${PIPESTATUS[1]}"
+PI_EXT_RC=${PIPESTATUS[1]}
 set -o pipefail
-if [ "$PI_INSTALL_RC" -eq 0 ]; then
-  echo "pi-9router-ext: installed"
-else
-  echo "ERROR: pi install npm:pi-9router-ext failed (exit $PI_INSTALL_RC)." >&2
-  exit "$PI_INSTALL_RC"
+if [ "$PI_EXT_RC" -ne 0 ]; then
+  echo "ERROR: pi install npm:pi-9router-ext failed (exit $PI_EXT_RC)." >&2
+  exit "$PI_EXT_RC"
 fi
+echo "pi-9router-ext: installed"
 
 step "6/12 — Install MCP server dependencies"
 run_verbose_npm npm install
