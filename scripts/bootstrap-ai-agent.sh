@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 set -Eeuo pipefail
 
-# One-shot Termux MCP + 9Router + Pi installer.
+# One-shot Termux MCP + 9Router + Pi + Hermes installer.
 # Interactive prompts use /dev/tty so curl | bash is safe.
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash
@@ -10,10 +10,12 @@ set -Eeuo pipefail
 REPO_URL="https://github.com/yashas-13/termux-mcp-server.git"
 REPO_DIR="${REPO_DIR:-$HOME/termux-mcp-server}"
 PI_PACKAGE="@earendil-works/pi-coding-agent"
+HERMES_INSTALLER_URL="https://hermes-agent.nousresearch.com/install.sh"
 NINE_ROUTER_BASE_URL="${NINE_ROUTER_BASE_URL:-http://127.0.0.1:20128}"
 NINE_ROUTER_API_KEY="${NINE_ROUTER_API_KEY:-sk_9router}"
 PROFILE="$HOME/.profile"
 VERBOSE=0
+HERMES_INSTALLER=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -40,20 +42,22 @@ CURRENT_STEP="initialization"
 START_EPOCH="$(date +%s)"
 
 cleanup() {
-  rc=$?
+  local rc=$?
+  [ -z "$HERMES_INSTALLER" ] || rm -f "$HERMES_INSTALLER" 2>/dev/null || true
   if [ "$rc" -ne 0 ]; then
     echo
-    echo "ERROR: installation failed (exit $rc)"
-    echo "Step: $CURRENT_STEP"
-    echo "Repository: $REPO_DIR"
-    echo "9Router log: $HOME/.9router.log"
+    echo "ERROR: installation failed (exit $rc)" >&2
+    echo "Step: $CURRENT_STEP" >&2
+    echo "Repository: $REPO_DIR" >&2
+    echo "9Router log: $HOME/.9router.log" >&2
+    [ -d "$REPO_DIR" ] && echo "Doctor: bash $REPO_DIR/scripts/doctor.sh" >&2
   fi
 }
 trap cleanup EXIT
 
 error_report() {
-  rc=$?
-  echo
+  local rc=$?
+  echo >&2
   echo "ERROR: command failed at line $1 (exit $rc): $2" >&2
   exit "$rc"
 }
@@ -104,14 +108,14 @@ prompt_secret() {
 }
 
 echo
- echo "=========================================================="
-echo " 9Router + Pi Agent + Android MCP Installer"
+echo "=========================================================="
+echo " Termux MCP + 9Router + Pi + Hermes Agent Installer"
 echo "=========================================================="
 echo "Repository: $REPO_DIR"
 echo "Router:     $NINE_ROUTER_BASE_URL"
 echo "Mode:       $([ "$VERBOSE" -eq 1 ] && echo VERBOSE || echo NORMAL)"
 echo
- echo "Prerequisite: Termux and Termux:API Android apps must already be installed."
+echo "Prerequisite: Termux and Termux:API Android apps must already be installed."
 echo
 
 ANSWER=""
@@ -121,13 +125,13 @@ case "${ANSWER:-Y}" in
   *) echo "Cancelled."; exit 0 ;;
 esac
 
-step "1/10 — Update Termux and install packages"
+step "1/12 — Update Termux and install packages"
 # pkg -y answers package confirmation prompts automatically.
 run pkg update -y
 run pkg upgrade -y
-run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep
+run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep python clang rust make pkg-config libffi openssl ffmpeg
 
-for command_name in git node npm curl pgrep termux-battery-status tmux; do
+for command_name in git node npm curl pgrep termux-battery-status tmux python clang rust rg ffmpeg; do
   exists "$command_name" || { echo "Missing command: $command_name" >&2; exit 1; }
 done
 
@@ -138,12 +142,12 @@ NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 echo "Git:       $(git --version)"
 echo "Node.js:   $NODE_VERSION"
 echo "npm:       $(npm --version)"
+echo "Python:    $(python --version 2>&1)"
 echo "Termux:API: READY"
 echo "tmux:      $(tmux -V)"
 
-step "2/10 — Clone or fully fast-forward the Git repository"
+step "2/12 — Clone or fully fast-forward the Git repository"
 if [ -d "$REPO_DIR/.git" ]; then
-  # Fetch the complete remote state first, then fast-forward local main.
   run git -C "$REPO_DIR" fetch --prune origin
   run git -C "$REPO_DIR" checkout main
   run git -C "$REPO_DIR" pull --ff-only origin main
@@ -157,27 +161,52 @@ fi
 
 cd "$REPO_DIR"
 echo "Commit: $(git rev-parse --short HEAD)"
-
 git status --short
 
-step "3/10 — Install 9Router latest"
+step "3/12 — Install 9Router latest"
 run npm config set allow-scripts=9router --location=user
 run_verbose_npm npm install -g 9router@latest
 exists 9router || { echo "9router is not in PATH." >&2; exit 1; }
 echo "9Router: $(9router --version 2>/dev/null || echo installed)"
 
-step "4/10 — Install Pi Coding Agent"
+step "4/12 — Install Pi Coding Agent"
 run_verbose_npm npm install -g --ignore-scripts "$PI_PACKAGE"
 exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
-step "5/10 — Install pi-9router-ext"
-# Automatically accept a normal Y/n/default confirmation if the extension
-# installer asks. stdin is not needed by the package installer itself.
+step "5/12 — Install pi-9router-ext"
 yes "" | pi install npm:pi-9router-ext
- echo "pi-9router-ext: installed"
+echo "pi-9router-ext: installed"
 
-step "6/10 — Configure 9Router"
+step "6/12 — Install MCP server dependencies"
+run_verbose_npm npm install
+echo "MCP npm dependencies: installed"
+
+step "7/12 — Install Hermes Agent for Termux"
+if exists hermes; then
+  echo "Hermes already installed: $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
+else
+  HERMES_INSTALLER="$(mktemp "$TMPDIR/hermes-install.XXXXXX.sh")"
+  echo "Downloading official Hermes installer..."
+  run curl -fsSL "$HERMES_INSTALLER_URL" -o "$HERMES_INSTALLER"
+  chmod 700 "$HERMES_INSTALLER"
+  echo "Running official Hermes installer..."
+  bash "$HERMES_INSTALLER" </dev/tty
+  rm -f "$HERMES_INSTALLER"
+  HERMES_INSTALLER=""
+  exists hermes || { echo "Hermes installer completed but hermes is not in PATH." >&2; exit 1; }
+fi
+echo "Hermes: $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
+
+step "8/12 — Verify Hermes Agent"
+if hermes doctor; then
+  echo "Hermes doctor: PASS"
+else
+  echo "ERROR: Hermes doctor reported a failure." >&2
+  exit 1
+fi
+
+step "9/12 — Configure 9Router"
 echo "Default URL: $NINE_ROUTER_BASE_URL"
 CUSTOM_URL=""
 prompt "Press Enter for default, or enter another URL: " CUSTOM_URL
@@ -201,12 +230,7 @@ export NINE_ROUTER_BASE_URL NINE_ROUTER_API_KEY
 echo "Router URL: $NINE_ROUTER_BASE_URL"
 echo "API key:   configured (hidden)"
 
-step "7/10 — Install MCP server dependencies"
-run_verbose_npm npm install
-
-echo "MCP npm dependencies: installed"
-
-step "8/10 — Start 9Router --tray"
+step "10/12 — Start 9Router --tray"
 if pgrep -af '(^|/)9router( |$)' >/dev/null 2>&1; then
   echo "9Router is already running."
 else
@@ -226,7 +250,7 @@ else
   fi
 fi
 
-step "9/10 — Verify 9Router"
+step "11/12 — Verify 9Router"
 MODEL_FILE="$HOME/.9router-models.json"
 
 if curl -fsS --max-time 10 \
@@ -249,7 +273,7 @@ else
   echo "Check: tail -n 80 ~/.9router.log"
 fi
 
-step "10/10 — Final stack checks"
+step "12/12 — Final stack checks"
 [ -x "$REPO_DIR/scripts/doctor.sh" ] || {
   echo "ERROR: scripts/doctor.sh not found." >&2
   exit 1
@@ -267,11 +291,16 @@ echo "MCP:        $REPO_DIR"
 echo "9Router:    $NINE_ROUTER_BASE_URL"
 echo "Pi:         $(pi --version 2>/dev/null || echo installed)"
 echo "Extension:  pi-9router-ext"
+echo "Hermes:     $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
 echo "Duration:   ${DURATION}s"
 echo "Router log: $HOME/.9router.log"
 echo
- echo "Start:"
+echo "Start Pi:"
 echo "  source ~/.profile && pi"
+echo
+echo "Start Hermes:"
+echo "  hermes setup"
+echo "  hermes"
 echo
 echo "Inside Pi:"
 echo "  /9router-config"
@@ -279,7 +308,7 @@ echo "  /9router-reload"
 echo "  /9router-models"
 echo "  /model 9router/<model-id>"
 echo
- echo "Choose any currently available free provider/model and start coding."
+echo "Choose any currently available free provider/model and start coding."
 echo "=========================================================="
 
 LAUNCH=""
