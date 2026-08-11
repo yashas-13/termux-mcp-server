@@ -2,7 +2,6 @@
 set -Eeuo pipefail
 
 # One-shot Termux MCP + 9Router + Pi + Hermes installer.
-# Interactive prompts use /dev/tty so curl | bash is safe.
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash
 #   curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash -s -- --verbose
@@ -20,19 +19,12 @@ HERMES_INSTALLER=""
 for arg in "$@"; do
   case "$arg" in
     --verbose|-v) VERBOSE=1 ;;
-    --help|-h)
-      echo "Usage: bootstrap-ai-agent.sh [--verbose]"
-      exit 0
-      ;;
-    *)
-      echo "Unknown option: $arg" >&2
-      exit 2
-      ;;
+    --help|-h) echo "Usage: bootstrap-ai-agent.sh [--verbose]"; exit 0 ;;
+    *) echo "Unknown option: $arg" >&2; exit 2 ;;
   esac
 done
 
-# curl | bash sends the script through stdin. Move interactive input to the
-# controlling terminal so prompts never consume downloaded script bytes.
+# curl | bash: keep interactive prompts on the controlling terminal.
 if [ ! -t 0 ]; then
   [ -r /dev/tty ] || { echo "Interactive terminal required." >&2; exit 2; }
   exec </dev/tty
@@ -45,7 +37,7 @@ cleanup() {
   local rc=$?
   [ -z "$HERMES_INSTALLER" ] || rm -f "$HERMES_INSTALLER" 2>/dev/null || true
   if [ "$rc" -ne 0 ]; then
-    echo
+    echo >&2
     echo "ERROR: installation failed (exit $rc)" >&2
     echo "Step: $CURRENT_STEP" >&2
     echo "Repository: $REPO_DIR" >&2
@@ -72,9 +64,7 @@ step() {
 }
 
 run() {
-  if [ "$VERBOSE" -eq 1 ]; then
-    echo "+ $*"
-  fi
+  [ "$VERBOSE" -eq 1 ] && echo "+ $*"
   "$@"
 }
 
@@ -86,22 +76,16 @@ run_verbose_npm() {
   fi
 }
 
-exists() {
-  command -v "$1" >/dev/null 2>&1
-}
+exists() { command -v "$1" >/dev/null 2>&1; }
 
 prompt() {
-  local message="$1"
-  local variable="$2"
-  local value
+  local message="$1" variable="$2" value
   read -r -p "$message" value </dev/tty || exit 1
   printf -v "$variable" '%s' "$value"
 }
 
 prompt_secret() {
-  local message="$1"
-  local variable="$2"
-  local value
+  local message="$1" variable="$2" value
   read -r -s -p "$message" value </dev/tty || exit 1
   echo
   printf -v "$variable" '%s' "$value"
@@ -126,7 +110,7 @@ case "${ANSWER:-Y}" in
 esac
 
 step "1/12 — Update Termux and install packages"
-# pkg -y answers package confirmation prompts automatically.
+# Native -y flags answer package-manager confirmations without masking errors.
 run pkg update -y
 run pkg upgrade -y
 run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep python clang rust make pkg-config libffi openssl ffmpeg
@@ -139,23 +123,23 @@ NODE_VERSION="$(node --version)"
 NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 [ "$NODE_MAJOR" -ge 22 ] || { echo "Pi requires Node.js >=22; found $NODE_VERSION" >&2; exit 1; }
 
-echo "Git:       $(git --version)"
-echo "Node.js:   $NODE_VERSION"
-echo "npm:       $(npm --version)"
-echo "Python:    $(python --version 2>&1)"
+echo "Git:        $(git --version)"
+echo "Node.js:    $NODE_VERSION"
+echo "npm:        $(npm --version)"
+echo "Python:     $(python --version 2>&1)"
 echo "Termux:API: READY"
-echo "tmux:      $(tmux -V)"
+echo "tmux:       $(tmux -V)"
 
 step "2/12 — Clone or fully fast-forward the Git repository"
 if [ -d "$REPO_DIR/.git" ]; then
   run git -C "$REPO_DIR" fetch --prune origin
   run git -C "$REPO_DIR" checkout main
   run git -C "$REPO_DIR" pull --ff-only origin main
-  echo "Repository updated to latest fast-forwardable main."
-elif [ -e "$REPO_DIR" ]; then
-  echo "ERROR: $REPO_DIR exists but is not a Git repository." >&2
-  exit 1
 else
+  if [ -e "$REPO_DIR" ]; then
+    echo "ERROR: $REPO_DIR exists but is not a Git repository." >&2
+    exit 1
+  fi
   run git clone --branch main --single-branch "$REPO_URL" "$REPO_DIR"
 fi
 
@@ -175,8 +159,17 @@ exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
 step "5/12 — Install pi-9router-ext"
-yes "" | pi install npm:pi-9router-ext
-echo "pi-9router-ext: installed"
+# IMPORTANT: do not pipe `yes` into pi under `set -o pipefail`.
+# Pi finishes successfully and the yes process receives SIGPIPE (141), which
+# previously caused the installer to report a false failure after installation.
+# Pi package installation is non-interactive here, so stdin is closed.
+if pi install npm:pi-9router-ext </dev/null; then
+  echo "pi-9router-ext: installed"
+else
+  rc=$?
+  echo "ERROR: pi install npm:pi-9router-ext failed (exit $rc)." >&2
+  exit "$rc"
+fi
 
 step "6/12 — Install MCP server dependencies"
 run_verbose_npm npm install
@@ -239,12 +232,10 @@ else
   ROUTER_PID=$!
   echo "$ROUTER_PID" > "$HOME/.9router.pid"
   sleep 3
-
   if kill -0 "$ROUTER_PID" 2>/dev/null; then
     echo "9Router running: PID $ROUTER_PID"
   else
     echo "ERROR: 9Router exited during startup." >&2
-    echo "--- ~/.9router.log ---" >&2
     tail -n 80 "$HOME/.9router.log" >&2 || true
     exit 1
   fi
@@ -252,10 +243,7 @@ fi
 
 step "11/12 — Verify 9Router"
 MODEL_FILE="$HOME/.9router-models.json"
-
-if curl -fsS --max-time 10 \
-  "$NINE_ROUTER_BASE_URL/v1/models" \
-  -o "$MODEL_FILE"; then
+if curl -fsS --max-time 10 "$NINE_ROUTER_BASE_URL/v1/models" -o "$MODEL_FILE"; then
   echo "9Router /v1/models: READY"
   node -e '
     const fs=require("fs");
@@ -264,9 +252,7 @@ if curl -fsS --max-time 10 \
       const models=x.data||x.models||[];
       console.log("Models discovered: "+models.length);
       models.slice(0,50).forEach(m=>console.log("  - "+(m.id||m.name||m.model||"unknown")));
-    } catch (_) {
-      console.log("Model response saved to ~/.9router-models.json");
-    }
+    } catch (_) { console.log("Model response saved to ~/.9router-models.json"); }
   '
 else
   echo "WARNING: 9Router is running but /v1/models is not reachable yet."
@@ -274,15 +260,10 @@ else
 fi
 
 step "12/12 — Final stack checks"
-[ -x "$REPO_DIR/scripts/doctor.sh" ] || {
-  echo "ERROR: scripts/doctor.sh not found." >&2
-  exit 1
-}
-
+[ -x "$REPO_DIR/scripts/doctor.sh" ] || { echo "ERROR: scripts/doctor.sh not found." >&2; exit 1; }
 bash "$REPO_DIR/scripts/doctor.sh"
 
 DURATION=$(( $(date +%s) - START_EPOCH ))
-
 echo
 echo "=========================================================="
 echo " INSTALLATION COMPLETE"
@@ -307,8 +288,6 @@ echo "  /9router-config"
 echo "  /9router-reload"
 echo "  /9router-models"
 echo "  /model 9router/<model-id>"
-echo
-echo "Choose any currently available free provider/model and start coding."
 echo "=========================================================="
 
 LAUNCH=""
@@ -319,7 +298,5 @@ case "${LAUNCH:-Y}" in
     cd "$REPO_DIR"
     exec pi
     ;;
-  *)
-    echo "Setup complete. Run: source ~/.profile && pi"
-    ;;
+  *) echo "Setup complete. Run: source ~/.profile && pi" ;;
 esac
