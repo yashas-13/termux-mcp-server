@@ -4,12 +4,10 @@ set -Eeuo pipefail
 REPO_URL="https://github.com/yashas-13/termux-mcp-server.git"
 REPO_DIR="${REPO_DIR:-$HOME/termux-mcp-server}"
 PI_PACKAGE="@earendil-works/pi-coding-agent"
-HERMES_INSTALLER_URL="https://hermes-agent.nousresearch.com/install.sh"
 NINE_ROUTER_BASE_URL="${NINE_ROUTER_BASE_URL:-http://127.0.0.1:20128}"
 NINE_ROUTER_API_KEY="${NINE_ROUTER_API_KEY:-sk_9router}"
 PROFILE="$HOME/.profile"
 VERBOSE=0
-HERMES_INSTALLER=""
 
 for arg in "$@"; do
   case "$arg" in
@@ -19,7 +17,7 @@ for arg in "$@"; do
   esac
 done
 
-# curl | bash: keep interactive prompts on the controlling terminal.
+# Keep prompts on the controlling terminal when launched with curl | bash.
 if [ ! -t 0 ]; then
   [ -r /dev/tty ] || { echo "Interactive terminal required." >&2; exit 2; }
   exec </dev/tty
@@ -30,7 +28,6 @@ START_EPOCH="$(date +%s)"
 
 cleanup() {
   local rc=$?
-  [ -z "$HERMES_INSTALLER" ] || rm -f "$HERMES_INSTALLER" 2>/dev/null || true
   if [ "$rc" -ne 0 ]; then
     echo >&2
     echo "ERROR: installation failed (exit $rc)" >&2
@@ -88,7 +85,7 @@ prompt_secret() {
 
 echo
 echo "=========================================================="
-echo " Termux MCP + 9Router + Pi + Hermes Agent Installer"
+echo " Termux MCP + 9Router + Pi Agent Installer"
 echo "=========================================================="
 echo "Repository: $REPO_DIR"
 echo "Router:     $NINE_ROUTER_BASE_URL"
@@ -104,14 +101,12 @@ case "${ANSWER:-Y}" in
   *) echo "Cancelled."; exit 0 ;;
 esac
 
-step "1/12 — Update Termux and install packages"
+step "1/10 — Update Termux and install packages"
 run pkg update -y
 run pkg upgrade -y
-run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep python clang rust make pkg-config libffi openssl ffmpeg
+run pkg install -y git nodejs curl termux-api procps tmux fd ripgrep
 
-# Rust is a toolchain, not a command named `rust` on Termux. Validate the
-# actual executables supplied by the rust package.
-for command_name in git node npm curl pgrep termux-battery-status tmux python clang rustc cargo rg ffmpeg; do
+for command_name in git node npm curl pgrep termux-battery-status tmux rg; do
   exists "$command_name" || { echo "Missing command: $command_name" >&2; exit 1; }
 done
 
@@ -122,13 +117,14 @@ NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]')"
 echo "Git:        $(git --version)"
 echo "Node.js:    $NODE_VERSION"
 echo "npm:        $(npm --version)"
-echo "Python:     $(python --version 2>&1)"
-echo "Rust:       $(rustc --version)"
-echo "Cargo:      $(cargo --version)"
 echo "Termux:API: READY"
 echo "tmux:       $(tmux -V)"
 
-step "2/12 — Clone or fully fast-forward the Git repository"
+echo
+ echo "Free-model routing note: Hermes is intentionally not installed by this bootstrap."
+echo "The supported stack is Termux MCP + 9Router + Pi + pi-9router-ext."
+
+step "2/10 — Clone or fully fast-forward the Git repository"
 if [ -d "$REPO_DIR/.git" ]; then
   run git -C "$REPO_DIR" fetch --prune origin
   run git -C "$REPO_DIR" checkout main
@@ -145,20 +141,19 @@ cd "$REPO_DIR"
 echo "Commit: $(git rev-parse --short HEAD)"
 git status --short
 
-step "3/12 — Install 9Router latest"
+step "3/10 — Install 9Router latest"
 run npm config set allow-scripts=9router --location=user
 run_verbose_npm npm install -g 9router@latest
 exists 9router || { echo "9router is not in PATH." >&2; exit 1; }
 echo "9Router: $(9router --version 2>/dev/null || echo installed)"
 
-step "4/12 — Install Pi Coding Agent"
+step "4/10 — Install Pi Coding Agent"
 run_verbose_npm npm install -g --ignore-scripts "$PI_PACKAGE"
 exists pi || { echo "Pi is not in PATH." >&2; exit 1; }
 echo "Pi: $(pi --version 2>/dev/null || echo installed)"
 
-step "5/12 — Install pi-9router-ext"
-# Do not use `yes | pi`: with pipefail, the producer can receive SIGPIPE
-# after Pi has already completed successfully. Feed one confirmation only.
+step "5/10 — Install pi-9router-ext"
+# Send one confirmation only. Avoid `yes | pi`, which can create SIGPIPE 141.
 set +o pipefail
 printf 'y\n' | pi install npm:pi-9router-ext
 PI_EXT_RC=${PIPESTATUS[1]}
@@ -169,35 +164,11 @@ if [ "$PI_EXT_RC" -ne 0 ]; then
 fi
 echo "pi-9router-ext: installed"
 
-step "6/12 — Install MCP server dependencies"
+step "6/10 — Install MCP server dependencies"
 run_verbose_npm npm install
 echo "MCP npm dependencies: installed"
 
-step "7/12 — Install Hermes Agent for Termux"
-if exists hermes; then
-  echo "Hermes already installed: $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
-else
-  HERMES_INSTALLER="$(mktemp "$TMPDIR/hermes-install.XXXXXX.sh")"
-  echo "Downloading official Hermes installer..."
-  run curl -fsSL "$HERMES_INSTALLER_URL" -o "$HERMES_INSTALLER"
-  chmod 700 "$HERMES_INSTALLER"
-  echo "Running official Hermes installer..."
-  bash "$HERMES_INSTALLER" </dev/tty
-  rm -f "$HERMES_INSTALLER"
-  HERMES_INSTALLER=""
-  exists hermes || { echo "Hermes installer completed but hermes is not in PATH." >&2; exit 1; }
-fi
-echo "Hermes: $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
-
-step "8/12 — Verify Hermes Agent"
-if hermes doctor; then
-  echo "Hermes doctor: PASS"
-else
-  echo "ERROR: Hermes doctor reported a failure." >&2
-  exit 1
-fi
-
-step "9/12 — Configure 9Router"
+step "7/10 — Configure 9Router"
 echo "Default URL: $NINE_ROUTER_BASE_URL"
 CUSTOM_URL=""
 prompt "Press Enter for default, or enter another URL: " CUSTOM_URL
@@ -221,7 +192,7 @@ export NINE_ROUTER_BASE_URL NINE_ROUTER_API_KEY
 echo "Router URL: $NINE_ROUTER_BASE_URL"
 echo "API key:   configured (hidden)"
 
-step "10/12 — Start 9Router --tray"
+step "8/10 — Start 9Router --tray"
 if pgrep -af '(^|/)9router( |$)' >/dev/null 2>&1; then
   echo "9Router is already running."
 else
@@ -239,7 +210,7 @@ else
   fi
 fi
 
-step "11/12 — Verify 9Router"
+step "9/10 — Verify 9Router and discover models"
 MODEL_FILE="$HOME/.9router-models.json"
 if curl -fsS --max-time 10 "$NINE_ROUTER_BASE_URL/v1/models" -o "$MODEL_FILE"; then
   echo "9Router /v1/models: READY"
@@ -257,7 +228,7 @@ else
   echo "Check: tail -n 80 ~/.9router.log"
 fi
 
-step "12/12 — Final stack checks"
+step "10/10 — Final stack checks and usage guide"
 [ -x "$REPO_DIR/scripts/doctor.sh" ] || { echo "ERROR: scripts/doctor.sh not found." >&2; exit 1; }
 bash "$REPO_DIR/scripts/doctor.sh"
 
@@ -270,22 +241,42 @@ echo "MCP:        $REPO_DIR"
 echo "9Router:    $NINE_ROUTER_BASE_URL"
 echo "Pi:         $(pi --version 2>/dev/null || echo installed)"
 echo "Extension:  pi-9router-ext"
-echo "Hermes:     $(hermes --version 2>/dev/null || hermes version 2>/dev/null || echo installed)"
 echo "Duration:   ${DURATION}s"
 echo "Router log: $HOME/.9router.log"
 echo
-echo "Start Pi:"
-echo "  source ~/.profile && pi"
+echo "NEXT — SELECT A MODEL"
 echo
-echo "Start Hermes:"
-echo "  hermes setup"
-echo "  hermes"
+echo "1. Start Pi:"
+echo "   source ~/.profile && pi"
 echo
-echo "Inside Pi:"
-echo "  /9router-config"
-echo "  /9router-reload"
-echo "  /9router-models"
-echo "  /model 9router/<model-id>"
+echo "2. Configure the router if needed:"
+echo "   /9router-config"
+echo
+echo "3. Refresh the live model list:"
+echo "   /9router-reload"
+echo
+echo "4. Open the model selector:"
+echo "   /9router-models"
+echo
+echo "5. Choose a currently available free model."
+echo "   Search the live list for providers/routes such as OpenCode or DeepSeek."
+echo "   Availability is dynamic; do not assume a model is free until the live list shows it."
+echo
+echo "6. Or select a discovered model directly:"
+echo "   /model 9router/<model-id>"
+echo
+echo "7. Verify the active model:"
+echo "   /model"
+echo
+echo "Example workflow:"
+echo "   /9router-config"
+echo "   /9router-reload"
+echo "   /9router-models"
+echo "   /model 9router/<choose-a-live-free-model>"
+echo
+echo "Then give Pi a coding task."
+echo
+echo "NOTE: Big Pickle / OpenCode and DeepSeek routes can change. Use /9router-models to select what your configured 9Router instance currently exposes as available/free."
 echo "=========================================================="
 
 LAUNCH=""
