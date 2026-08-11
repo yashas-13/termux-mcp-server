@@ -58,10 +58,10 @@ The Android apps must be installed separately; the shell bootstrap cannot instal
 ### 2️⃣ Paste this ONE command into Termux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh | bash
+git clone --progress --branch main https://github.com/yashas-13/termux-mcp-server.git "$HOME/termux-mcp-server" && cd "$HOME/termux-mcp-server" && bash scripts/bootstrap-ai-agent.sh
 ```
 
-That's it. The installer is **interactive, ordered, fail-fast and rerunnable**.
+That's it. Git gives you visible clone progress, then the repository's own bootstrap takes over with the ordered installation flow.
 
 > 🔐 **Security:** this is a convenience installer for a repository you trust. If you want to inspect it first, open [`scripts/bootstrap-ai-agent.sh`](scripts/bootstrap-ai-agent.sh) and run it locally instead of piping it to Bash.
 
@@ -190,6 +190,10 @@ Inside Pi:
 /9router-models
 ```
 
+First open the **9Router dashboard** and configure a provider/account that you are authorized to use. Free models are provider-dependent; 9Router itself does not guarantee free access.
+
+After configuring the provider, run `/9router-reload` and open `/9router-models` to inspect the live catalogue exposed by your router.
+
 Select **any free provider/model currently available to you** in the live 9Router dashboard. Availability changes, so the project intentionally does not hard-code a model that may disappear.
 
 Then select the discovered model:
@@ -229,7 +233,7 @@ Then connect the Termux MCP server to your MCP-capable client and combine coding
 Copy this into an AI coding agent that can operate your Termux environment:
 
 ```text
-Set up the complete Termux AI stack end-to-end: verify Termux + Termux:API are installed, run https://raw.githubusercontent.com/yashas-13/termux-mcp-server/main/scripts/bootstrap-ai-agent.sh, install Git/Node.js/curl/termux-api, clone or update termux-mcp-server, install 9router@latest and start `9router --tray` on localhost:20128, install Pi Coding Agent and `pi-9router-ext`, configure NINE_ROUTER_BASE_URL and the user's local NINE_ROUTER_API_KEY, install the MCP dependencies, verify `/v1/models`, launch Pi, run `/9router-config`, `/9router-reload` and `/9router-models`, guide the user to connect any currently available free provider and select a discovered `9router/<model-id>`, then verify the Termux MCP tools; keep credentials private, keep 9Router local, and test read-only capabilities before side-effecting tools.
+Set up the complete Termux AI stack end-to-end: verify Termux + Termux:API are installed, clone https://github.com/yashas-13/termux-mcp-server.git into ~/termux-mcp-server, run scripts/bootstrap-ai-agent.sh, install Git/Node.js/curl/termux-api, install 9router@latest and start `9router --tray` on localhost:20128, install Pi Coding Agent and `pi-9router-ext`, configure NINE_ROUTER_BASE_URL and the user's local NINE_ROUTER_API_KEY, install the MCP dependencies, verify `/v1/models`, launch Pi, run `/9router-config`, `/9router-reload` and `/9router-models`, guide the user to configure an authorized provider and select a currently available free route such as an exposed OpenCode/Big Pickle or DeepSeek route if present, then verify the Termux MCP tools; keep credentials private, keep 9Router local, and test read-only capabilities before side-effecting tools.
 ```
 
 ---
